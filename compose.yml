@@ -8,10 +8,11 @@ services:
       FRIGATE_URL: "http://192.168.4.69:5000"
       ARCHIVE_DIR: "/archive"
       STATE_DB: "/data/state.db"
+      EXPORT_DIR: "/frigate-exports"
       RETENTION_DAYS: "90"
       POLL_SECONDS: "5"
       EXPORT_TIMEOUT: "300"
     volumes:
       - /archive:/archive
       - /opt/docker/appdata/frigate-archiver/data:/data
-      - /media/frigate/exports:/frigate-exports:ro
+      - /frigate-exports:/frigate-exports:ro
