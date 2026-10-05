@@ -8,6 +8,7 @@ import requests
 
 FRIGATE_URL = os.getenv("FRIGATE_URL", "http://192.168.4.69:5000").rstrip("/")
 ARCHIVE_DIR = Path(os.getenv("ARCHIVE_DIR", "/archive"))
+EXPORT_DIR = Path(os.getenv("EXPORT_DIR", "/frigate-exports"))
 STATE_DB = Path(os.getenv("STATE_DB", "/data/state.db"))
 RETENTION_DAYS = int(os.getenv("RETENTION_DAYS", "90"))
 POLL_SECONDS = int(os.getenv("POLL_SECONDS", "5"))
@@ -44,7 +45,8 @@ def wait_export(export_id):
         r.raise_for_status()
         data = r.json()
         if not data.get("in_progress", True):
-            return Path(data["video_path"]) if data.get("video_path") else None
+            video_path = data.get("video_path")
+            return EXPORT_DIR / Path(video_path).name if video_path else None
         time.sleep(POLL_SECONDS)
     raise TimeoutError(f"Export {export_id} timed out")
 
