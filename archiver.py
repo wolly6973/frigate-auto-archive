@@ -13,7 +13,8 @@ STATE_DB = Path(os.environ["STATE_DB"])
 RETENTION_DAYS = int(os.environ["RETENTION_DAYS"])
 POLL_SECONDS = int(os.environ["POLL_SECONDS"])
 EXPORT_TIMEOUT = int(os.environ["EXPORT_TIMEOUT"])
-ARCHIVE_INTERVAL_SECONDS = int(os.environ["ARCHIVE_INTERVAL_SECONDS"])
+ARCHIVE_TIME = os.environ["ARCHIVE_TIME"]
+ARCHIVE_TZ = os.environ.get("ARCHIVE_TZ", "America/Chicago")
 session = requests.Session()
 
 def db():
@@ -92,11 +93,17 @@ def main():
     print(f"Frigate: {FRIGATE_URL} | Archive: {ARCHIVE_DIR} | Retention: {RETENTION_DAYS} days", flush=True)
     while True:
         try:
-            for severity in ("alert", "detection"):
+            now = datetime.now().astimezone()
+            if now.strftime("%H:%M") == ARCHIVE_TIME:
+                print(f"Starting daily archive at {ARCHIVE_TIME}", flush=True)
+                for severity in ("alert", "detection"):
                 for review in reviews(severity):
                     try: archive_review(c, review)
                     except Exception as e: print(f"Error processing {review.get('id')}: {e}", flush=True)
-            cleanup(c)
+                cleanup(c)
+                time.sleep(61)
+            else:
+                time.sleep(20)
         except Exception as e:
             print(f"Main loop error: {e}", flush=True)
         time.sleep(ARCHIVE_INTERVAL_SECONDS)
