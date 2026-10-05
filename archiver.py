@@ -6,13 +6,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 import requests
 
-FRIGATE_URL = os.getenv("FRIGATE_URL", "http://192.168.4.69:5000").rstrip("/")
-ARCHIVE_DIR = Path(os.getenv("ARCHIVE_DIR", "/archive"))
-EXPORT_DIR = Path(os.getenv("EXPORT_DIR", "/frigate-exports"))
-STATE_DB = Path(os.getenv("STATE_DB", "/data/state.db"))
-RETENTION_DAYS = int(os.getenv("RETENTION_DAYS", "90"))
-POLL_SECONDS = int(os.getenv("POLL_SECONDS", "5"))
-EXPORT_TIMEOUT = int(os.getenv("EXPORT_TIMEOUT", "300"))
+FRIGATE_URL = os.environ["FRIGATE_URL"].rstrip("/")
+ARCHIVE_DIR = Path(os.environ["ARCHIVE_DIR"])
+EXPORT_DIR = Path(os.environ["EXPORT_DIR"])
+STATE_DB = Path(os.environ["STATE_DB"])
+RETENTION_DAYS = int(os.environ["RETENTION_DAYS"])
+POLL_SECONDS = int(os.environ["POLL_SECONDS"])
+EXPORT_TIMEOUT = int(os.environ["EXPORT_TIMEOUT"])\nARCHIVE_INTERVAL_SECONDS = int(os.environ["ARCHIVE_INTERVAL_SECONDS"])
 session = requests.Session()
 
 def db():
@@ -95,7 +95,7 @@ def main():
             cleanup(c)
         except Exception as e:
             print(f"Main loop error: {e}", flush=True)
-        time.sleep(300)
+        time.sleep(ARCHIVE_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     main()
