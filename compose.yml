@@ -5,7 +5,7 @@ services:
     container_name: frigate-auto-archive
     restart: unless-stopped
     environment:
-      FRIGATE_URL: "http://192.168.4.69:5000"
+      FRIGATE_URL: "${FRIGATE_URL:-http://192.168.4.69:5000}"
       ARCHIVE_DIR: "/archive"
       STATE_DB: "/data/state.db"
       EXPORT_DIR: "/frigate-exports"
