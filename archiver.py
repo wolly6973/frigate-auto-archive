@@ -1,3 +1,4 @@
+import argparse
 import os
 import shutil
 import sqlite3
@@ -90,11 +91,24 @@ def cleanup(c):
             print(f"Could not delete {path}: {e}", flush=True)
     c.commit()
 
+def run_archive(c):
+    print("Starting archive run", flush=True)
+    for severity in ("alert", "detection"):
+        for review in reviews(severity):
+            try:
+                archive_review(c, review)
+            except Exception as e:
+                print(f"Error processing {review.get('id')}: {e}", flush=True)
+    cleanup(c)
+
 def should_run_today():
     now = datetime.now().astimezone()
     return now.strftime("%H:%M") == ARCHIVE_TIME
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run-now", action="store_true", help="Run the archive job immediately and exit")
+    args = parser.parse_args()
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     c = db()
     print(
@@ -102,6 +116,11 @@ def main():
         f"Retention: {RETENTION_DAYS} days | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
         flush=True,
     )
+    if args.run_now:
+        run_archive(c)
+        c.close()
+        return
+
     last_run_date = None
 
     while True:
@@ -111,16 +130,7 @@ def main():
 
             if should_run_today() and last_run_date != today:
                 print(f"Starting daily archive at {ARCHIVE_TIME}", flush=True)
-                for severity in ("alert", "detection"):
-                    for review in reviews(severity):
-                        try:
-                            archive_review(c, review)
-                        except Exception as e:
-                            print(
-                                f"Error processing {review.get('id')}: {e}",
-                                flush=True,
-                            )
-                cleanup(c)
+                run_archive(c)
                 last_run_date = today
 
             time.sleep(20)
