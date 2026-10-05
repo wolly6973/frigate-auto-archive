@@ -16,6 +16,9 @@ POLL_SECONDS = int(os.environ["POLL_SECONDS"])
 EXPORT_TIMEOUT = int(os.environ["EXPORT_TIMEOUT"])
 ARCHIVE_TIME = os.environ["ARCHIVE_TIME"]
 ARCHIVE_TZ = os.environ.get("ARCHIVE_TZ", "America/Chicago")
+ARCHIVE_SEVERITIES = [s.strip().lower() for s in os.environ.get("ARCHIVE_SEVERITIES", "alert,detection").split(",") if s.strip()]
+if not ARCHIVE_SEVERITIES or any(s not in ("alert", "detection") for s in ARCHIVE_SEVERITIES):
+    raise ValueError("ARCHIVE_SEVERITIES must contain only alert, detection, or both separated by commas")
 session = requests.Session()
 
 def db():
@@ -119,7 +122,7 @@ def cleanup(c):
 def run_archive(c):
     print("Starting archive run", flush=True)
     total = 0
-    for severity in ("alert", "detection"):
+    for severity in ARCHIVE_SEVERITIES:
         review_list = reviews(severity)
         print(f"Processing {len(review_list)} {severity}(s)...", flush=True)
         total += len(review_list)
@@ -144,7 +147,7 @@ def main():
     c = db()
     print(
         f"Frigate: {FRIGATE_URL} | Archive: {ARCHIVE_DIR} | "
-        f"Retention: {RETENTION_DAYS} days | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
+        f"Retention: {RETENTION_DAYS} days | Severities: {", ".join(ARCHIVE_SEVERITIES)} | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
         flush=True,
     )
     if args.run_now:
