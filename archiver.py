@@ -19,6 +19,7 @@ ARCHIVE_TZ = os.environ.get("ARCHIVE_TZ", "America/Chicago")
 ARCHIVE_SEVERITIES = [s.strip().lower() for s in os.environ.get("ARCHIVE_SEVERITIES", "alert,detection").split(",") if s.strip()]
 if not ARCHIVE_SEVERITIES or any(s not in ("alert", "detection") for s in ARCHIVE_SEVERITIES):
     raise ValueError("ARCHIVE_SEVERITIES must contain only alert, detection, or both separated by commas")
+ARCHIVE_SEVERITIES_TEXT = ", ".join(ARCHIVE_SEVERITIES)
 session = requests.Session()
 
 def db():
@@ -147,7 +148,7 @@ def main():
     c = db()
     print(
         f"Frigate: {FRIGATE_URL} | Archive: {ARCHIVE_DIR} | "
-        f"Retention: {RETENTION_DAYS} days | Severities: {\", \".join(ARCHIVE_SEVERITIES)} | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
+        f"Retention: {RETENTION_DAYS} days | Severities: {ARCHIVE_SEVERITIES_TEXT} | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
         flush=True,
     )
     if args.run_now:
