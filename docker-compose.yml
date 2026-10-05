@@ -14,6 +14,7 @@ services:
       EXPORT_TIMEOUT: "${EXPORT_TIMEOUT:?EXPORT_TIMEOUT is required}"
       ARCHIVE_TIME: "${ARCHIVE_TIME:?ARCHIVE_TIME is required}"
       ARCHIVE_TZ: "${ARCHIVE_TZ:-America/Chicago}"
+      ARCHIVE_SEVERITIES: "${ARCHIVE_SEVERITIES:-alert,detection}"
     volumes:
       - ${ARCHIVE_HOST_PATH:?ARCHIVE_HOST_PATH is required}:${ARCHIVE_DIR}
       - ${STATE_HOST_PATH:?STATE_HOST_PATH is required}:/data
