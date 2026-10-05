@@ -68,9 +68,17 @@ def wait_export(export_id):
 
 def archive_review(c, review):
     rid = review["id"]
-    if c.execute("SELECT 1 FROM archived WHERE review_id=?", (rid,)).fetchone():
-        print(f"Already archived: {review['severity']} {review['camera']} {rid}", flush=True)
-        return
+    existing = c.execute(
+        "SELECT archive_path FROM archived WHERE review_id=?", (rid,)
+    ).fetchone()
+    if existing:
+        archive_path = Path(existing[0])
+        if archive_path.exists():
+            print(f"Already archived: {review['severity']} {review['camera']} {rid}", flush=True)
+            return
+        print(f"Archive file missing; re-processing {review['severity']} {review['camera']} {rid}", flush=True)
+        c.execute("DELETE FROM archived WHERE review_id=?", (rid,))
+        c.commit()
     print(f"Archiving {review['severity']} {review['camera']} {rid}", flush=True)
     source = wait_export(create_export(review))
     if not source or not source.exists():
