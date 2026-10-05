@@ -29,36 +29,47 @@ def db():
     return c
 
 def reviews(severity):
+    print(f"Querying Frigate for {severity}s...", flush=True)
     r = session.get(f"{FRIGATE_URL}/api/review", params={"severity": severity}, timeout=30)
     r.raise_for_status()
-    return r.json()
+    data = r.json()
+    print(f"Found {len(data)} {severity}(s)", flush=True)
+    return data
 
 def create_export(review):
+    print(f"Creating export for {review['severity']} {review['camera']} {review['id']}...", flush=True)
     r = session.post(
         f"{FRIGATE_URL}/api/export/{review['camera']}/start/{review['start_time']}/end/{review['end_time']}",
         json={"playback": "realtime", "source": "recordings", "name": f"archive-{review['id']}"},
         timeout=30)
     r.raise_for_status()
-    return r.json()["export_id"]
+    export_id = r.json()["export_id"]
+    print(f"Export queued: {export_id}", flush=True)
+    return export_id
 
 def wait_export(export_id):
     deadline = time.time() + EXPORT_TIMEOUT
     while time.time() < deadline:
         r = session.get(f"{FRIGATE_URL}/api/exports/{export_id}", timeout=30)
         if r.status_code == 404:
+            print(f"Export {export_id} not ready yet; retrying in {POLL_SECONDS}s...", flush=True)
             time.sleep(POLL_SECONDS)
             continue
         r.raise_for_status()
         data = r.json()
         if not data.get("in_progress", True):
             video_path = data.get("video_path")
-            return EXPORT_DIR / Path(video_path).name if video_path else None
+            source = EXPORT_DIR / Path(video_path).name if video_path else None
+            print(f"Export {export_id} complete: {source}", flush=True)
+            return source
+        print(f"Export {export_id} still in progress; retrying in {POLL_SECONDS}s...", flush=True)
         time.sleep(POLL_SECONDS)
     raise TimeoutError(f"Export {export_id} timed out")
 
 def archive_review(c, review):
     rid = review["id"]
     if c.execute("SELECT 1 FROM archived WHERE review_id=?", (rid,)).fetchone():
+        print(f"Already archived: {review['severity']} {review['camera']} {rid}", flush=True)
         return
     print(f"Archiving {review['severity']} {review['camera']} {rid}", flush=True)
     source = wait_export(create_export(review))
@@ -70,15 +81,19 @@ def archive_review(c, review):
     destdir.mkdir(parents=True, exist_ok=True)
     dest = destdir / f"{review['severity']}_{rid}.mp4"
     if not dest.exists():
+        print(f"Copying {source} -> {dest}", flush=True)
         shutil.copy2(source, dest)
+    else:
+        print(f"Archive already exists: {dest}", flush=True)
     c.execute("INSERT INTO archived VALUES (?,?,?,?,?,?,?)",
               (rid, review["camera"], review["severity"], review["start_time"],
                review["end_time"], str(dest), time.time()))
     c.commit()
-    print(f"Archived -> {dest}", flush=True)
+    print(f"Archived successfully: {dest}", flush=True)
 
 def cleanup(c):
     cutoff = time.time() - RETENTION_DAYS * 86400
+    removed = 0
     for rid, path in c.execute(
         "SELECT review_id,archive_path FROM archived WHERE start_time < ?", (cutoff,)
     ).fetchall():
@@ -87,19 +102,27 @@ def cleanup(c):
             if p.exists():
                 p.unlink()
             c.execute("DELETE FROM archived WHERE review_id=?", (rid,))
+            removed += 1
         except OSError as e:
             print(f"Could not delete {path}: {e}", flush=True)
     c.commit()
+    print(f"Retention cleanup complete: removed {removed} expired archive(s)", flush=True)
 
 def run_archive(c):
     print("Starting archive run", flush=True)
+    total = 0
     for severity in ("alert", "detection"):
-        for review in reviews(severity):
+        review_list = reviews(severity)
+        print(f"Processing {len(review_list)} {severity}(s)...", flush=True)
+        total += len(review_list)
+        for review in review_list:
             try:
                 archive_review(c, review)
             except Exception as e:
                 print(f"Error processing {review.get('id')}: {e}", flush=True)
+    print(f"Finished processing {total} review(s); running retention cleanup...", flush=True)
     cleanup(c)
+    print("Archive run finished.", flush=True)
 
 def should_run_today():
     now = datetime.now().astimezone()
@@ -122,17 +145,14 @@ def main():
         return
 
     last_run_date = None
-
     while True:
         try:
             now = datetime.now().astimezone()
             today = now.date()
-
             if should_run_today() and last_run_date != today:
                 print(f"Starting daily archive at {ARCHIVE_TIME}", flush=True)
                 run_archive(c)
                 last_run_date = today
-
             time.sleep(20)
         except Exception as e:
             print(f"Main loop error: {e}", flush=True)
