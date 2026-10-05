@@ -12,7 +12,8 @@ EXPORT_DIR = Path(os.environ["EXPORT_DIR"])
 STATE_DB = Path(os.environ["STATE_DB"])
 RETENTION_DAYS = int(os.environ["RETENTION_DAYS"])
 POLL_SECONDS = int(os.environ["POLL_SECONDS"])
-EXPORT_TIMEOUT = int(os.environ["EXPORT_TIMEOUT"])\nARCHIVE_INTERVAL_SECONDS = int(os.environ["ARCHIVE_INTERVAL_SECONDS"])
+EXPORT_TIMEOUT = int(os.environ["EXPORT_TIMEOUT"])
+ARCHIVE_INTERVAL_SECONDS = int(os.environ["ARCHIVE_INTERVAL_SECONDS"])
 session = requests.Session()
 
 def db():
