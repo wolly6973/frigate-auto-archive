@@ -57,7 +57,7 @@ Archive layout:
 | `POLL_SECONDS` | `5` | Seconds between export status checks |
 | `EXPORT_TIMEOUT` | `300` | Maximum seconds to wait for an individual export |
 | `ARCHIVE_TIME` | `03:00` | Daily archive start time in 24-hour `HH:MM` format |
-| `ARCHIVE_TZ` | `America/Chicago` | Timezone associated with the configured schedule |
+| `ARCHIVE_TZ` | `America/Chicago` | Timezone associated with the configured schedule |\n| `ARCHIVE_SEVERITIES` | `alert,detection` | Review types to archive: `alert`, `detection`, or both as a comma-separated list |
 
 ### Deployment path variables
 
@@ -83,6 +83,7 @@ POLL_SECONDS=5
 EXPORT_TIMEOUT=300
 ARCHIVE_TIME=03:00
 ARCHIVE_TZ=America/Chicago
+ARCHIVE_SEVERITIES=alert,detection
 
 ARCHIVE_HOST_PATH=/rpool/hdd/frigate-archive
 STATE_HOST_PATH=/opt/docker/appdata/frigate-archiver/data
@@ -184,4 +185,4 @@ The archiver normally runs once per day at the configured `ARCHIVE_TIME`. To tri
 pct exec 124 -- docker exec frigate-auto-archive python /app/archiver.py --run-now
 ```
 
-The manual run processes both **alerts** and **detections**, respects the existing SQLite state so previously archived reviews are skipped, performs the normal 90-day cleanup, and exits when the run is complete. It does not change the normal daily schedule.
+The manual run processes the review types selected by `ARCHIVE_SEVERITIES`, respects the existing SQLite state so previously archived reviews are skipped, performs the normal 90-day cleanup, and exits when the run is complete. It does not change the normal daily schedule.\n\n### Choosing what to archive\n\nSet `ARCHIVE_SEVERITIES` in Portainer to one of:\n\n```text\nARCHIVE_SEVERITIES=alert\nARCHIVE_SEVERITIES=detection\nARCHIVE_SEVERITIES=alert,detection\n```\n\nThe default is `alert,detection`, which archives both types. After changing the value, use **Pull and redeploy**. The setting applies to both scheduled and manual runs.
