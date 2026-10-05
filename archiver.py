@@ -147,7 +147,7 @@ def main():
     c = db()
     print(
         f"Frigate: {FRIGATE_URL} | Archive: {ARCHIVE_DIR} | "
-        f"Retention: {RETENTION_DAYS} days | Severities: {", ".join(ARCHIVE_SEVERITIES)} | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
+        f"Retention: {RETENTION_DAYS} days | Severities: {\", \".join(ARCHIVE_SEVERITIES)} | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
         flush=True,
     )
     if args.run_now:
