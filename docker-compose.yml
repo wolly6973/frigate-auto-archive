@@ -14,5 +14,5 @@ services:
       EXPORT_TIMEOUT: "${EXPORT_TIMEOUT}"
     volumes:
       - ${ARCHIVE_HOST_PATH}:${ARCHIVE_DIR}
-      - ${STATE_HOST_PATH}:${STATE_DB%/*}
+      - ${STATE_HOST_PATH}:/data
       - ${EXPORT_HOST_PATH}:${EXPORT_DIR}:ro
