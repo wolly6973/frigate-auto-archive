@@ -43,6 +43,9 @@ def wait_export(export_id):
     deadline = time.time() + EXPORT_TIMEOUT
     while time.time() < deadline:
         r = session.get(f"{FRIGATE_URL}/api/exports/{export_id}", timeout=30)
+        if r.status_code == 404:
+            time.sleep(POLL_SECONDS)
+            continue
         r.raise_for_status()
         data = r.json()
         if not data.get("in_progress", True):
