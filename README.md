@@ -176,3 +176,12 @@ The archive is independent of Frigate's active recording storage. This allows lo
 ## License
 
 No license is currently specified. Add a license before distributing the project if desired.
+## Manual run
+
+The archiver normally runs once per day at the configured `ARCHIVE_TIME`. To trigger a run immediately for testing or on-demand archiving, run the following from the Proxmox host:
+
+```bash
+pct exec 124 -- docker exec frigate-auto-archive python /app/archiver.py --run-now
+```
+
+The manual run processes both **alerts** and **detections**, respects the existing SQLite state so previously archived reviews are skipped, performs the normal 90-day cleanup, and exits when the run is complete. It does not change the normal daily schedule.
