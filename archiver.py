@@ -35,7 +35,7 @@ def reviews(severity):
 def create_export(review):
     r = session.post(
         f"{FRIGATE_URL}/api/export/{review['camera']}/start/{review['start_time']}/end/{review['end_time']}",
-        json={"playback":"realtime","source":"recordings","name":f"archive-{review['id']}"},
+        json={"playback": "realtime", "source": "recordings", "name": f"archive-{review['id']}"},
         timeout=30)
     r.raise_for_status()
     return r.json()["export_id"]
@@ -78,35 +78,55 @@ def archive_review(c, review):
 
 def cleanup(c):
     cutoff = time.time() - RETENTION_DAYS * 86400
-    for rid, path in c.execute("SELECT review_id,archive_path FROM archived WHERE start_time < ?", (cutoff,)).fetchall():
+    for rid, path in c.execute(
+        "SELECT review_id,archive_path FROM archived WHERE start_time < ?", (cutoff,)
+    ).fetchall():
         try:
             p = Path(path)
-            if p.exists(): p.unlink()
+            if p.exists():
+                p.unlink()
             c.execute("DELETE FROM archived WHERE review_id=?", (rid,))
         except OSError as e:
             print(f"Could not delete {path}: {e}", flush=True)
     c.commit()
 
+def should_run_today():
+    now = datetime.now().astimezone()
+    return now.strftime("%H:%M") == ARCHIVE_TIME
+
 def main():
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     c = db()
-    print(f"Frigate: {FRIGATE_URL} | Archive: {ARCHIVE_DIR} | Retention: {RETENTION_DAYS} days", flush=True)
+    print(
+        f"Frigate: {FRIGATE_URL} | Archive: {ARCHIVE_DIR} | "
+        f"Retention: {RETENTION_DAYS} days | Daily run: {ARCHIVE_TIME} ({ARCHIVE_TZ})",
+        flush=True,
+    )
+    last_run_date = None
+
     while True:
         try:
             now = datetime.now().astimezone()
-            if now.strftime("%H:%M") == ARCHIVE_TIME:
+            today = now.date()
+
+            if should_run_today() and last_run_date != today:
                 print(f"Starting daily archive at {ARCHIVE_TIME}", flush=True)
                 for severity in ("alert", "detection"):
-                for review in reviews(severity):
-                    try: archive_review(c, review)
-                    except Exception as e: print(f"Error processing {review.get('id')}: {e}", flush=True)
+                    for review in reviews(severity):
+                        try:
+                            archive_review(c, review)
+                        except Exception as e:
+                            print(
+                                f"Error processing {review.get('id')}: {e}",
+                                flush=True,
+                            )
                 cleanup(c)
-                time.sleep(61)
-            else:
-                time.sleep(20)
+                last_run_date = today
+
+            time.sleep(20)
         except Exception as e:
             print(f"Main loop error: {e}", flush=True)
-        time.sleep(ARCHIVE_INTERVAL_SECONDS)
+            time.sleep(20)
 
 if __name__ == "__main__":
     main()
