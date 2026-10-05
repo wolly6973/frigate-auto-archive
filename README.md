@@ -74,7 +74,7 @@ These paths are intentionally not hard-coded into the repository so the same Com
 ## Example environment
 
 ```text
-FRIGATE_URL=http://192.168.4.69:5000
+FRIGATE_URL=http://10.10.10.3:5000
 ARCHIVE_DIR=/archive
 STATE_DB=/data/state.db
 EXPORT_DIR=/frigate-exports
