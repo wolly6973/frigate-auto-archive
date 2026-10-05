@@ -5,14 +5,14 @@ services:
     container_name: frigate-auto-archive
     restart: unless-stopped
     environment:
-      FRIGATE_URL: "${FRIGATE_URL:-http://192.168.4.69:5000}"
-      ARCHIVE_DIR: "/archive"
-      STATE_DB: "/data/state.db"
-      EXPORT_DIR: "/frigate-exports"
-      RETENTION_DAYS: "90"
-      POLL_SECONDS: "5"
-      EXPORT_TIMEOUT: "300"
+      FRIGATE_URL: "${FRIGATE_URL}"
+      ARCHIVE_DIR: "${ARCHIVE_DIR}"
+      STATE_DB: "${STATE_DB}"
+      EXPORT_DIR: "${EXPORT_DIR}"
+      RETENTION_DAYS: "${RETENTION_DAYS}"
+      POLL_SECONDS: "${POLL_SECONDS}"
+      EXPORT_TIMEOUT: "${EXPORT_TIMEOUT}"
     volumes:
-      - /archive:/archive
-      - /opt/docker/appdata/frigate-archiver/data:/data
-      - /frigate-exports:/frigate-exports:ro
+      - ${ARCHIVE_HOST_PATH}:${ARCHIVE_DIR}
+      - ${STATE_HOST_PATH}:${STATE_DB%/*}
+      - ${EXPORT_HOST_PATH}:${EXPORT_DIR}:ro
