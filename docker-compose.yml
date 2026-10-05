@@ -5,14 +5,14 @@ services:
     container_name: frigate-auto-archive
     restart: unless-stopped
     environment:
-      FRIGATE_URL: "${FRIGATE_URL}"
-      ARCHIVE_DIR: "${ARCHIVE_DIR}"
-      STATE_DB: "${STATE_DB}"
-      EXPORT_DIR: "${EXPORT_DIR}"
-      RETENTION_DAYS: "${RETENTION_DAYS}"
-      POLL_SECONDS: "${POLL_SECONDS}"
-      EXPORT_TIMEOUT: "${EXPORT_TIMEOUT}"
+      FRIGATE_URL: "${FRIGATE_URL:?FRIGATE_URL is required}"
+      ARCHIVE_DIR: "${ARCHIVE_DIR:?ARCHIVE_DIR is required}"
+      STATE_DB: "${STATE_DB:?STATE_DB is required}"
+      EXPORT_DIR: "${EXPORT_DIR:?EXPORT_DIR is required}"
+      RETENTION_DAYS: "${RETENTION_DAYS:?RETENTION_DAYS is required}"
+      POLL_SECONDS: "${POLL_SECONDS:?POLL_SECONDS is required}"
+      EXPORT_TIMEOUT: "${EXPORT_TIMEOUT:?EXPORT_TIMEOUT is required}"
     volumes:
-      - ${ARCHIVE_HOST_PATH}:${ARCHIVE_DIR}
-      - ${STATE_HOST_PATH}:/data
-      - ${EXPORT_HOST_PATH}:${EXPORT_DIR}:ro
+      - ${ARCHIVE_HOST_PATH:?ARCHIVE_HOST_PATH is required}:${ARCHIVE_DIR}
+      - ${STATE_HOST_PATH:?STATE_HOST_PATH is required}:/data
+      - ${EXPORT_HOST_PATH:?EXPORT_HOST_PATH is required}:${EXPORT_DIR}:ro
